@@ -1,0 +1,6 @@
+[submodule "stb"]
+	path = tool/stb
+	url = https://github.com/nothings/stb
+[submodule "nuklear"]
+	path = tool/nuklear
+	url = https://github.com/vurtun/nuklear
