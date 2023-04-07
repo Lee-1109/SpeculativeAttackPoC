@@ -1,6 +1,7 @@
 /*
- * Spectre Variant 2 Proof of Concept.
- * The program uses spectre v2 to read its own memory.
+ * 同一个进程中使用spectre v2 进行数据窃去 
+ * Spectre Variant 2：branch target injection
+ * 
  */
 
 #include <stdio.h>
