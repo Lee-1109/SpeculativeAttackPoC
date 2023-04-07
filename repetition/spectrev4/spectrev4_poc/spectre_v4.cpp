@@ -25,27 +25,36 @@ int d=999;
 
 //t=16,15,14
 //p=3,4,5
+//size_t == unsigned long 
 void victim_function(size_t malicious_x)
 {
 	for(int i=0;i<100;i++)
 	{
+		//victim_function 和 victim_function1的不同之处
 		int junk=secret[0];
 	}
+	//victim_function 和 victim_function1的不同之处
 	str[3]=malicious_x;
 	str[(d*c+b*a)/(a*b*c+a)-16]=0;
 	temp &= array2[array1[str[3]] * 512];
 }
 
+
 void victim_function1(size_t malicious_x)
 {
 	for(int i=0;i<100;i++)
 	{
+		/*****************victim_function 和 victim_function1的不同之处****************/
 		int junk=secret[1];
+		/*****************victim_function 和 victim_function1的不同之处****************/
 	}
+	/*****************victim_function 和 victim_function1的不同之处****************/
 	str[3]=malicious_x+1;
+	/*****************victim_function 和 victim_function1的不同之处****************/
 	str[(d*c+b*a)/(a*b*c+a)-16]=0;
 	temp &= array2[array1[str[3]] * 512];
 }
+
 void victim_function2(size_t malicious_x)
 {
 	for(int i=0;i<100;i++)
@@ -57,9 +66,13 @@ void victim_function2(size_t malicious_x)
 	temp &= array2[array1[str[3]] * 512];
 }
 
+
+
+
 #define CACHE_HIT_THRESHOLD (80)
-
-
+/*
+攻击者程序
+*/
 void attack(size_t malicious_x)
 {
 	printf("--------attack--------\n");
@@ -104,4 +117,3 @@ int main(int argc, const char **argv)
 	
 	return (0);
 }
-

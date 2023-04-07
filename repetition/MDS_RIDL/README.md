@@ -4,7 +4,7 @@ This repository contains the following:
 
 ## exploits
 
-The 'shadow' PoC leaks the /etc/shadow file from a non-root user; thanks to Jonas Theis.
+The 'shadow' PoC leaks the /etc/shadow file from a non-root user.
 
 ## pocs
 
