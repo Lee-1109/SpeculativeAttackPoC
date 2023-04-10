@@ -20,13 +20,15 @@ int main(int argc, char *argv[]) {
   config = libkdump_get_autoconfig();
   libkdump_init(config);
 
+//随机获得一个字符串
   srand(time(NULL));
   const char *secret = strings[rand() % (sizeof(strings) / sizeof(strings[0]))];
   int len = strlen(secret);
-
+//打印该字符串
   printf("\x1b[32;1m[+]\x1b[0m Secret: \x1b[33;1m%s\x1b[0m\n", secret);
 
   size_t paddr = libkdump_virt_to_phys((size_t)secret);
+    
   if (!paddr) {
     printf("\x1b[31;1m[!]\x1b[0m Program requires root privileges (or read access to /proc/<pid>/pagemap)!\n");
     libkdump_cleanup();
