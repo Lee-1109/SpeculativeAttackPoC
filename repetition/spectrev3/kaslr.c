@@ -6,8 +6,9 @@ int main(int argc, char *argv[]) {
   size_t scratch[4096];
   libkdump_config_t config;
   size_t offset = DEFAULT_PHYSICAL_OFFSET;
+  //  size_t step = 0x800000000ll;
 #ifdef __x86_64__
-  size_t step = 0x800000000ll;
+  size_t step = 0x8000000000ll;
 #else
   size_t step = 0x1000000;
 #endif

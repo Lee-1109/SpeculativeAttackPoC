@@ -237,13 +237,19 @@ static __attribute__((always_inline)) inline void xend(void) {
 size_t libkdump_virt_to_phys(size_t virtual_address) {
   static int pagemap = -1;
   if (pagemap == -1) {
-    pagemap = open("/proc/self/pagemap", O_RDONLY);
+    pagemap = open("/proc/self/pagemap", O_RDONLY);//该文件中含有虚实地址的映射
     if (pagemap < 0) {
       errno = EPERM;
       return 0;
     }
   }
-  uint64_t value;
+  uint64_t value;//用于存放读取的64bit数据
+  /**
+   * fd：文件描述符，从该文件描述符对应文件的偏移量处开始读取数据。
+   * buf：读取的数据存放的缓冲区。
+   * count：要读取的字节数。
+   * offset：文件偏移量。
+  */
   int got = pread(pagemap, &value, 8, (virtual_address / 0x1000) * 8);
   if (got != 8) {
     errno = EPERM;
@@ -255,7 +261,7 @@ size_t libkdump_virt_to_phys(size_t virtual_address) {
     return 0;
   }
   return page_frame_number * 0x1000 + virtual_address % 0x1000;
-}
+}//libkdump_virt_to_phys
 
 // ---------------------------------------------------------------------------
 static int check_tsx() {
@@ -526,6 +532,7 @@ int __attribute__((optimize("-Os"), noinline)) libkdump_read_signal_handler() {
 
 // ---------------------------------------------------------------------------
 int __attribute__((optimize("-O0"))) libkdump_read(size_t addr) {
+  
   phys = addr;
 
   char res_stat[256];
@@ -538,11 +545,13 @@ int __attribute__((optimize("-O0"))) libkdump_read(size_t addr) {
   for (i = 0; i < config.measurements; i++) {
     if (config.fault_handling == TSX) {
       r = libkdump_read_tsx();
-    } else {
+    } 
+    else {
       r = libkdump_read_signal_handler();
     }
     res_stat[r]++;
-  }
+  }//for
+
   int max_v = 0, max_i = 0;
 
   if (dbg) {
@@ -552,13 +561,13 @@ int __attribute__((optimize("-O0"))) libkdump_read(size_t addr) {
       debug(INFO, "res_stat[%x] = %d\n",
             i, res_stat[i]);
     }
-  }
+  }//if
 
   for (i = 1; i < 256; i++) {
     if (res_stat[i] > max_v && res_stat[i] >= config.accept_after) {
       max_v = res_stat[i];
       max_i = i;
     }
-  }
+  }//for
   return max_i;
 }

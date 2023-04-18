@@ -7,6 +7,5 @@ all: $(OBJ)
 	gcc -o $@ $^
 
 .PHONY: clean
-# fuck the spectrev2
 clean:
 	-rm -f $(OBJ)

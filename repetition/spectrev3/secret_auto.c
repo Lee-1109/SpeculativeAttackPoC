@@ -1,5 +1,5 @@
 /**
- * 这个程序返回一个放置在内存中的字符串的物理地址，为了帮助可读
+ * 这是原始程序中的secret源代码
 */
 #include "libkdump.h"
 #include <sched.h>
