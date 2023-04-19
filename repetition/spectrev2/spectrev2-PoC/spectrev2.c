@@ -19,10 +19,7 @@
 
 uint8_t channel[256 * GAP]; // cache side channel to extract secret phrase
 
-
-
 uint64_t *target; // 64bit指针   pointer to indirect call target
-
 
 char *secret = "NingXiaUniversity@xgy";
 
@@ -31,7 +28,9 @@ char *secret = "NingXiaUniversity@xgy";
 //间接跳转的目的地址 spectre gadget
 int gadget(char *addr)
 {
+
   return channel[*addr * GAP]; //访问该数组 ，将其带到cache 侧信道中
+
 }
 
 
