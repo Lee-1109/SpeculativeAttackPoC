@@ -1,10 +1,12 @@
-CFLAGS += -std=c99 -O0
+SRC  = $(wildcard *.c)
+OBJ = $(patsubst %.c, %,$(SRC))
 
-PROGRAM = spectrev2
-SOURCE  = spectrev2.c
+all: $(OBJ)
 
-all: $(PROGRAM)
+%:%.c  
+	gcc -o $@ $^
 
-$(PROGRAM): $(SOURCE) ; $(CC) $(CFLAGS) -o $(PROGRAM) $(SOURCE)
-
-clean: ; rm -f $(PROGRAM)
+.PHONY: clean
+# fuck the spectrev2
+clean:
+	-rm -f $(OBJ)
