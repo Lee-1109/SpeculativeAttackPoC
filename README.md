@@ -12,7 +12,7 @@ this project is some simple PoC process about speculative attack such as
 * spectre v3a (rouge system register read,CVE-2018-3640)
 * spectre v4 (speculative store buffer bypass,CVE-2018-3693)
 * spectre v4.1(lazyFP state restore,lazyFP,CVE-2018-3665)
-* spectre RSB( return stack buffer,)
+* spectre RSB( Return Stack Buffer Bypass,)
 
 ## foreshadow cluster
 * foreshadow(L1 terminal fault-SGX,CVE-2018-3615)

